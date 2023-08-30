@@ -62,6 +62,7 @@ export default function Sankey() {
   let nodes = defaultNodes;
   let links = defaultLinks;
   let iterations = 6;
+  let valuescale = 1;
 
   function sankey() {
     const graph = {nodes: nodes.apply(null, arguments), links: links.apply(null, arguments)};
@@ -97,6 +98,10 @@ export default function Sankey() {
 
   sankey.nodePadding = function(_) {
     return arguments.length ? (dy = py = +_, sankey) : dy;
+  };
+  
+  sankey.valuescale = function(_) {
+	  return arguments.length ? (valuescale=_, sankey) : valuescale;
   };
 
   sankey.nodes = function(_) {
@@ -209,7 +214,23 @@ export default function Sankey() {
   }
 
   function initializeNodeBreadths(columns) {
-    const ky = min(columns, c => (y1 - y0 - (c.length - 1) * py) / sum(c, value));
+    let ky = 999999;	
+	
+	for(var x=0;x<columns.length;x++)
+	{
+		let tvalue = 0;
+		for(var y=0;y<columns[x].length;y++)
+		{
+			tvalue += columns[x][y].value;
+		}
+		let heightper = (y1 - y0) - (columns[x].length * py);
+		let ht = heightper / tvalue;
+		if ((ht != 0) && (ky > ht))
+		{
+			ky = ht;					
+		}		
+	}
+	
     for (const nodes of columns) {
       let y = y0;
       for (const node of nodes) {
@@ -232,7 +253,7 @@ export default function Sankey() {
 
   function computeNodeBreadths(graph) {
     const columns = computeNodeLayers(graph);
-    py = Math.min(dy, (y1 - y0) / (max(columns, c => c.length) - 1));
+    py = Math.min(dy, (y1 - y0) / (max(columns, c => c.length + valuescale)));
     initializeNodeBreadths(columns);
     for (let i = 0; i < iterations; ++i) {
       const alpha = Math.pow(0.99, i);
